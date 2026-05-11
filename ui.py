@@ -40,7 +40,7 @@ class MainWindow(QMainWindow):
         self.right_column = QVBoxLayout()
         main_layout.addLayout(self.right_column)
         
-        self.record_button = QPushButton("Record")
+        self.record_button = QPushButton("Start Recording")
         self.right_column.addWidget(self.record_button)
         
     def setup_connections(self):
@@ -60,16 +60,19 @@ class MainWindow(QMainWindow):
 
     def toggle_record(self):
         if self.recorder.is_recording:
-            pass
+            self.stop_record()
+            self.record_button.setText("Start Recording")
         else:
-            
-            pass
+            self.start_record()
+            self.record_button.setText("Stop Recording")
     
     def stop_record(self):
-        pass
+        self.recorder.stop()
+        name = "Voice " + datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.recorder.save("recordings", name)
     
-    def add_audio(self):
-        pass
+    def start_record(self):
+        self.recorder.start()
     
     def update_audio(self):
         pass
