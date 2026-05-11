@@ -44,7 +44,38 @@ class MainWindow(QMainWindow):
         self.right_column.addWidget(self.record_button)
         
     def setup_connections(self):
-        pass
+        self.record_button.clicked.connect(self.toggle_record)
     
     def render_recording(self):
+        pass
+    
+    def load_audio(self):
+        pass
+    
+    def select_audio(self, idx):
+        pass
+    
+    def play_audio(self):
+        pass
+
+    def toggle_record(self):
+        if self.recorder.is_recording:
+            pass
+        else:
+            
+            pass
+    
+    def stop_record(self):
+        pass
+    
+    def add_audio(self):
+        pass
+    
+    def update_audio(self):
+        pass
+    
+    def delete_audio(self):
+        pass
+    
+    def set_inputs(self, enabled):
         pass

@@ -26,14 +26,13 @@ class Storage:
         self.conn.commit()
         
         
-    def get_audio(self):
-        self.cursor.execute("SELECT * FROM audio")
-        return self.cursor.fetchall()
-    
-    def get_audio(self, audio_id):
-        self.cursor.execute("SELECT * FROM audio WHERE id = ?", (audio_id))
-        return self.cursor.fetchone()
-    
+    def get_audio(self, audio_id=None):
+        if audio_id is None:
+            self.cursor.execute("SELECT * FROM audio")
+            return self.cursor.fetchall()
+        else:
+            self.cursor.execute("SELECT * FROM audio WHERE id = ?", (audio_id,))
+            return self.cursor.fetchone()    
     
     def update_audio(self, audio_id, name, length, date, filepath):
         self.cursor.execute(
@@ -43,7 +42,7 @@ class Storage:
         
     
     def delete_audio(self, audio_id):
-        self.cursor.execute("DELETE FROM audio WHERE id = ?", (audio_id))
+        self.cursor.execute("DELETE FROM audio WHERE id = ?", (audio_id,))
         self.conn.commit()
         
     def close(self):
