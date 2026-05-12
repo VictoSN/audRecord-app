@@ -83,4 +83,7 @@ class Recorder:
         self.player.play()
         
     def progress(self, amount):
-        pass
+        current_position = self.player.position()
+        new_position = current_position + (amount * 1000) # Convert to ms
+        new_position = max(0, min(new_position, self.player.duration()))
+        self.player.setPosition(new_position)

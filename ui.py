@@ -102,7 +102,10 @@ class MainWindow(QMainWindow):
         
     def setup_connections(self):
         self.record_button.clicked.connect(self.toggle_record)
+        self.audio_name.editingFinished.connect(self.update_audio)
         self.play_playback.clicked.connect(self.toggle_playback)
+        self.backward_playback.clicked.connect(lambda: self.recorder.progress(-5))
+        self.forward_playback.clicked.connect(lambda: self.recorder.progress(5))
         self.delete_playback.clicked.connect(self.delete_audio)
         self.back_playback.clicked.connect(self.back_audio)
   
@@ -148,8 +151,10 @@ class MainWindow(QMainWindow):
         self.audio_name.setText(recording[1])
         self.total_duration.setText(recording[2])
         
-    def update_audio(self):    
-        pass
+    def update_audio(self):
+        recording = self.recordings[self.selected_idx]
+        new_name = self.audio_name.text()
+        self.storage.update_audio_name(recording[0], new_name)
     
     def toggle_playback(self):
         if self.recorder.is_playing:
@@ -175,10 +180,7 @@ class MainWindow(QMainWindow):
             self.recorder.is_playing = False
             self.recorder.is_paused = False
             self.timer.stop()
-            
-    def navigate_playback(self):
-        pass
-    
+                
     def delete_audio(self):
         recording = self.recordings[self.selected_idx]
         self.storage.delete_audio(recording[0])
