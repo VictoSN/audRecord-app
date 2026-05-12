@@ -8,15 +8,17 @@ from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 
 from pathlib import Path
 from recorder import Recorder
-from datetime import datetime
+from storage import Storage
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.recorder = Recorder()
+        self.storage = Storage()
         
         self.recordings = []
+        self.recordings = self.storage.get_audio()
         self.selected_idx = None
-        self.recorder = Recorder()
         
         self.setup_notification()
         self.setup_ui()
@@ -77,15 +79,27 @@ class MainWindow(QMainWindow):
         self.audio_output = QAudioOutput()
         self.sound.setAudioOutput(self.audio_output)
       
+    # Audio Playback Logic
     # Load the list of recording in the left column
     def render_recording(self):
-        
-        pass
-    
+        # Clear the layout first
+        for i in reversed(range(self.top_row.count())):
+            widget = self.top_row.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+                        
+        # Rebuild the UI
+        for i, recording in enumerate(self.recordings):
+            btn = QPushButton(recording[1])
+            btn.clicked.connect(lambda _, idx =i: self.select_audio(idx))
+            self.top_row.addWidget(btn)
+            
     # From the list, able to choose the audio
     def select_audio(self, idx):
+        self.selected_idx = idx
+        recording = self.recordings[idx]
         
-        pass
+        print(recording)
     
     # From the selected audio, load it from the storage and database
     def load_audio(self):
@@ -95,7 +109,16 @@ class MainWindow(QMainWindow):
     def play_audio(self):
         
         pass
-
+        
+    def update_audio(self):
+        
+        pass
+    
+    def delete_audio(self):
+        
+        pass
+    
+    # Audio Recording Logic
     def update_timer(self):
         if not self.recorder.is_recording: return
         
@@ -121,11 +144,9 @@ class MainWindow(QMainWindow):
         self.sound.play()
         
         self.recorder.stop()
+        self.recorder.save()
         self.elapsed_ms = 0
         self.timer_duration.setText("")
-        
-        name = "Voice " + datetime.now().strftime('%Y%m%d_%H%M%S')
-        self.recorder.save("recordings", name)
     
     def start_record(self):
         self.sound.setSource(QUrl.fromLocalFile(str(self.start_file)))
@@ -133,15 +154,8 @@ class MainWindow(QMainWindow):
         
         self.timer.start(10)
         self.recorder.start()
-        
-    def update_audio(self):
-        
-        pass
     
-    def delete_audio(self):
-        
-        pass
-    
+    # Controls Visibility
     def set_inputs(self, enabled):
         
         pass
@@ -153,3 +167,7 @@ class MainWindow(QMainWindow):
                 widget.hide()
             else:
                 widget.show()
+                
+    def closeEvent(self, event):
+        self.recorder.storage.close()
+        event.accept()
