@@ -15,6 +15,22 @@ A Python desktop application for recording, playing back, and managing audio rec
 - Recordings are saved as .wav files using soundfile
 - Playback is handled by QMediaPlayer with seek support
 
+## Screenshots
+### Default Interface
+![Default](/images/Default.png)
+
+### Recording
+![Recording](/images/Recording.png)
+
+### Single Recording
+![Single Recording](/images/Single.png)
+
+### Multiple Recording
+![Multiple Recording](/images/Multiple.png)
+
+### Replay Recording
+![Replay Recording](/images/Replay.png)
+
 ## How to run
 ### 1. Clone the repository
 ```bash
