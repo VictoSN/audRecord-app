@@ -1,8 +1,9 @@
+from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
+from PyQt6.QtCore import QUrl
+
 from storage import Storage
 from datetime import datetime
 from pathlib import Path
-from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PyQt6.QtCore import QUrl
 import sounddevice as sd
 import soundfile as sf
 import numpy as np

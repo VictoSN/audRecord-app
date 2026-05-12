@@ -1,11 +1,12 @@
 from PyQt6.QtWidgets import (
-    QLabel, QMainWindow, QPushButton,
+    QLabel, QMainWindow, QPushButton, QScrollArea,
     QWidget, QVBoxLayout, QHBoxLayout, 
-    QLineEdit,QSystemTrayIcon, QStyle
+    QLineEdit,QSystemTrayIcon, QStyle,
 )
-from PyQt6.QtCore import QTimer, QUrl
+from PyQt6.QtCore import QTimer, QUrl, Qt
 from PyQt6.QtMultimedia import QMediaPlayer, QAudioOutput
 
+from datetime import datetime
 from pathlib import Path
 from recorder import Recorder
 from storage import Storage
@@ -28,6 +29,8 @@ class MainWindow(QMainWindow):
         self.setup_timer()
         self.setup_sound_effects()
         self.render_recording()
+        
+        self.storage.delete_audio()
                 
     def setup_notification(self):
         self.tray = QSystemTrayIcon(self)
@@ -35,7 +38,7 @@ class MainWindow(QMainWindow):
         self.tray.show()
         
     def setup_ui(self):
-        self.setGeometry(100, 100, 400, 300)
+        self.setGeometry(100, 100, 330, 330)
         self.setWindowTitle("Audio Recorder")
         
         # Main widget and layout
@@ -45,6 +48,7 @@ class MainWindow(QMainWindow):
         
         # Playback Audio layout
         self.playback_layout = QVBoxLayout()
+        self.playback_layout.setSpacing(0)
         main_layout.addLayout(self.playback_layout)
         
         self.audio_name = QLineEdit()
@@ -52,24 +56,32 @@ class MainWindow(QMainWindow):
         
         # Timer duration
         self.timer_duration = QLabel()
-        self.playback_layout.addWidget(self.timer_duration)
         self.timer_duration.setStyleSheet("""
-                                          font-size: 48px;
+                                          font-size: 60px;
                                           font-weight: bold;
+                                          padding: 0px;
+                                          margin: 0px;
                                           qproperty-alignment: AlignCenter;
                                           """)
+        self.playback_layout.addWidget(self.timer_duration)
         
         self.total_duration = QLabel()
-        self.playback_layout.addWidget(self.total_duration)
         self.total_duration.setStyleSheet("""
-                                          font-size: 24px;
+                                          font-size: 42px;
                                           font-weight: bold;
+                                          padding: 0px;
+                                          margin: 0px;
                                           qproperty-alignment: AlignCenter;
                                           """)
-        
+        self.playback_layout.addWidget(self.total_duration)
+
+        self.playback_button = QVBoxLayout()
+        self.playback_button.setSpacing(5)
+        self.playback_layout.addLayout(self.playback_button)
 
         self.playback_control_layout = QHBoxLayout()
-        self.playback_layout.addLayout(self.playback_control_layout)
+        self.playback_control_layout.setSpacing(5)
+        self.playback_button.addLayout(self.playback_control_layout)
         
         self.backward_playback = QPushButton("-5")
         self.playback_control_layout.addWidget(self.backward_playback)
@@ -81,7 +93,8 @@ class MainWindow(QMainWindow):
         self.playback_control_layout.addWidget(self.forward_playback)
         
         self.playback_navigation_layout = QHBoxLayout()
-        self.playback_layout.addLayout(self.playback_navigation_layout)
+        self.playback_navigation_layout.setSpacing(5)
+        self.playback_button.addLayout(self.playback_navigation_layout)
         
         self.delete_playback = QPushButton("Delete")
         self.playback_navigation_layout.addWidget(self.delete_playback)
@@ -90,9 +103,15 @@ class MainWindow(QMainWindow):
         self.playback_navigation_layout.addWidget(self.back_playback)
         
         # Top & Bottom row
-        self.top_row = QVBoxLayout()
-        main_layout.addLayout(self.top_row)
-        
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
+
+        self.top_container = QWidget()
+        self.top_row = QVBoxLayout(self.top_container)
+
+        self.scroll.setWidget(self.top_container)
+        main_layout.addWidget(self.scroll)
+                
         self.bottom_row = QVBoxLayout()
         main_layout.addLayout(self.bottom_row)
                 
@@ -125,20 +144,62 @@ class MainWindow(QMainWindow):
         self.sound.setAudioOutput(self.audio_output)
       
     # Audio Playback Logic
+    def clear_rendering(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+
+            if item.widget():
+                item.widget().deleteLater()
+
+            elif item.layout():
+                self.clear_rendering(item.layout())
+                
     # Load the list of recording in the left column
     def render_recording(self):
-        # Clear the layout first
-        for i in reversed(range(self.top_row.count())):
-            widget = self.top_row.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
-                        
-        # Rebuild the UI
+        self.clear_rendering(self.top_row)
+
         for i, recording in enumerate(self.recordings):
-            btn = QPushButton(recording[1])
-            btn.clicked.connect(lambda _, idx =i: self.select_audio(idx))
-            self.top_row.addWidget(btn)
-       
+            recording_layout = QHBoxLayout()
+
+            info_layout = QVBoxLayout()
+            info_layout2 = QVBoxLayout()
+
+            recording_layout.addLayout(info_layout)
+            recording_layout.addStretch()
+            recording_layout.addLayout(info_layout2)
+
+            # Format date
+            raw_date = recording[3]
+            formatted_date = datetime.strptime(
+                raw_date,
+                "%Y%m%d_%H%M%S"
+            ).strftime("%Y-%m-%d : %H:%M:%S")
+
+            # Widgets
+            title = QLabel(recording[1])
+            date = QLabel(formatted_date)
+            duration = QLabel(recording[2])
+
+            btn = QPushButton("▶")
+            btn.setFixedWidth(45)
+
+            btn.clicked.connect(lambda _, idx=i: self.select_audio(idx))
+
+            # Styles
+            title.setStyleSheet("font-size: 16px; font-weight: bold;")
+            date.setStyleSheet("color: gray; font-size: 12px;")
+            duration.setStyleSheet("font-size: 13px; font-weight: bold;")
+            btn.setStyleSheet("QPushButton {padding: 6px; font-size: 16px;}")
+
+            # Layouts
+            info_layout.addWidget(title)
+            info_layout.addWidget(date)
+
+            info_layout2.addWidget(btn)
+            info_layout2.addWidget(duration)
+
+            self.top_row.addLayout(recording_layout)
+               
     def reset_flags(self):
         self.recorder.is_playing = False
         self.recorder.is_paused = False
@@ -244,7 +305,7 @@ class MainWindow(QMainWindow):
         self.recorder.stop()
         self.recorder.save()
         self.elapsed_ms = 0
-        self.timer_duration.setText("")
+        self.timer_duration.hide()
     
     def start_record(self):
         self.sound.setSource(QUrl.fromLocalFile(str(self.start_file)))
@@ -259,7 +320,11 @@ class MainWindow(QMainWindow):
             item = layout.itemAt(i)
 
             if item.widget():
-                item.widget().setVisible(visible)
+                if visible:
+                    item.widget().show()
+                else:
+                    item.widget().hide()
+                    
             elif item.layout():
                 self.set_layout_visible(item.layout(), visible)
     
@@ -268,6 +333,11 @@ class MainWindow(QMainWindow):
             
     def hide_top_row(self, enabled):
         self.set_layout_visible(self.top_row, not enabled)
+        
+        if enabled:
+            self.scroll.hide()
+        else:
+            self.scroll.show()
                
     def hide_record_button(self, enabled):
         if enabled:
