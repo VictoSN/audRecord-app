@@ -104,8 +104,8 @@ class MainWindow(QMainWindow):
         self.record_button.clicked.connect(self.toggle_record)
         self.audio_name.editingFinished.connect(self.update_audio)
         self.play_playback.clicked.connect(self.toggle_playback)
-        self.backward_playback.clicked.connect(lambda: self.recorder.progress(-5))
-        self.forward_playback.clicked.connect(lambda: self.recorder.progress(5))
+        self.backward_playback.clicked.connect(lambda: self.duration_playback(-5))
+        self.forward_playback.clicked.connect(lambda: self.duration_playback(5))
         self.delete_playback.clicked.connect(self.delete_audio)
         self.back_playback.clicked.connect(self.back_audio)
   
@@ -138,13 +138,20 @@ class MainWindow(QMainWindow):
             btn = QPushButton(recording[1])
             btn.clicked.connect(lambda _, idx =i: self.select_audio(idx))
             self.top_row.addWidget(btn)
-            
+       
+    def reset_flags(self):
+        self.recorder.is_playing = False
+        self.recorder.is_paused = False
+        self.recorder.player.stop()
+        self.timer.stop()
+
     # From the list, able to choose the audio
     def select_audio(self, idx):
         self.selected_idx = idx
         recording = self.recordings[idx]
         
         self.hide_control(False)
+        self.hide_record_button(True)
         self.hide_top_row(True)
         print(recording)
         self.timer_duration.setText("00:00.0")
@@ -177,19 +184,28 @@ class MainWindow(QMainWindow):
     def media_status(self, status):
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
             self.play_playback.setText("Play")
-            self.recorder.is_playing = False
-            self.recorder.is_paused = False
-            self.timer.stop()
-                
+            self.reset_flags()
+                            
+    # Forward / Backward playback
+    def duration_playback(self, amount):
+        if not self.recorder.is_playing and not self.recorder.is_paused:
+            self.toggle_playback()
+        elif self.recorder.is_paused:
+            self.recorder.resume()
+        self.recorder.progress(amount)
+    
     def delete_audio(self):
         recording = self.recordings[self.selected_idx]
         self.storage.delete_audio(recording[0])
         self.back_audio()
     
     def back_audio(self):
+        self.reset_flags()
         self.timer_duration.setText("")
         self.hide_control(True)
+        self.hide_record_button(False)
         self.hide_top_row(False)
+        
         self.recordings = self.storage.get_audio()
         self.render_recording()
     
@@ -249,9 +265,15 @@ class MainWindow(QMainWindow):
     
     def hide_control(self, enabled):
         self.set_layout_visible(self.playback_layout, not enabled)
-        
+            
     def hide_top_row(self, enabled):
         self.set_layout_visible(self.top_row, not enabled)
+               
+    def hide_record_button(self, enabled):
+        if enabled:
+            self.record_button.hide()
+        else:
+            self.record_button.show()
                 
     def closeEvent(self, event):
         self.recorder.storage.close()
