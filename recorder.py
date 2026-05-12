@@ -48,7 +48,7 @@ class Recorder:
     def format_time(self, seconds):
         min = int(seconds // 60)
         sec = int(seconds % 60)
-        ms = int(round((seconds - int(seconds)) * 10))
+        ms = int((seconds - int(seconds)) * 10)
         
         return f"{min:02}:{sec:02}.{ms}"
     

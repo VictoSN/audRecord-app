@@ -29,9 +29,7 @@ class MainWindow(QMainWindow):
         self.setup_timer()
         self.setup_sound_effects()
         self.render_recording()
-        
-        self.storage.delete_audio()
-                
+                        
     def setup_notification(self):
         self.tray = QSystemTrayIcon(self)
         self.tray.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
@@ -160,12 +158,13 @@ class MainWindow(QMainWindow):
 
         for i, recording in enumerate(self.recordings):
             recording_layout = QHBoxLayout()
+            recording_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
             info_layout = QVBoxLayout()
             info_layout2 = QVBoxLayout()
+            info_layout2.setAlignment(Qt.AlignmentFlag.AlignRight)
 
             recording_layout.addLayout(info_layout)
-            recording_layout.addStretch()
             recording_layout.addLayout(info_layout2)
 
             # Format date

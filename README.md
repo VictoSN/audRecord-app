@@ -1,8 +1,21 @@
-# audRecord-app
-Basic audio recording app made in Python with PyQt6
+# audio-recorder
+## A desktop audio recorder built with PyQt6
+A Python desktop application for recording, playing back, and managing audio recordings.
+
+## Features
+- Record / Delete Recordings
+- Named Recordings
+- Forward / Backward Playback Controls
+- Persistent Storage in SQLite
+- Sound effects on record start / stop
+
+## How it works
+- Recordings are stored in SQLite and loaded on startup
+- sounddevice captures audio via a callback stream
+- Recordings are saved as .wav files using soundfile
+- Playback is handled by QMediaPlayer with seek support
 
 ## How to run
-
 ### 1. Clone the repository
 ```bash
 git clone <your-repo-url>
@@ -25,7 +38,7 @@ python -m venv venv
 
 ### 4. Install dependencies
 ```powershell
-pip install PyQt6
+pip install PyQt6 sounddevice soundfile numpy
 ```
 
 ### 5. Run the application
@@ -49,7 +62,7 @@ source venv/bin/activate
 
 ### 4. Install dependencies
 ```bash
-pip install PyQt6
+pip install PyQt6 sounddevice soundfile numpy
 ```
 
 ### 5. Run the application
