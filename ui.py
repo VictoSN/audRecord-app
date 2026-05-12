@@ -14,6 +14,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.recorder = Recorder()
+        self.recorder.player.mediaStatusChanged.connect(self.media_status)
         self.storage = Storage()
         
         self.recordings = []
@@ -22,11 +23,12 @@ class MainWindow(QMainWindow):
         
         self.setup_notification()
         self.setup_ui()
+        self.hide_control(True)
         self.setup_connections()
         self.setup_timer()
         self.setup_sound_effects()
         self.render_recording()
-        
+                
     def setup_notification(self):
         self.tray = QSystemTrayIcon(self)
         self.tray.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
@@ -41,28 +43,68 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
         
-        # Left & Right column
-        self.top_row = QVBoxLayout()
-        main_layout.addLayout(self.top_row)
+        # Playback Audio layout
+        self.playback_layout = QVBoxLayout()
+        main_layout.addLayout(self.playback_layout)
         
-        self.bottom_row = QVBoxLayout()
-        main_layout.addLayout(self.bottom_row)
+        self.audio_name = QLineEdit()
+        self.playback_layout.addWidget(self.audio_name)
         
         # Timer duration
         self.timer_duration = QLabel()
-        self.bottom_row.addWidget(self.timer_duration)
+        self.playback_layout.addWidget(self.timer_duration)
         self.timer_duration.setStyleSheet("""
                                           font-size: 48px;
                                           font-weight: bold;
                                           qproperty-alignment: AlignCenter;
                                           """)
         
+        self.total_duration = QLabel()
+        self.playback_layout.addWidget(self.total_duration)
+        self.total_duration.setStyleSheet("""
+                                          font-size: 24px;
+                                          font-weight: bold;
+                                          qproperty-alignment: AlignCenter;
+                                          """)
+        
+
+        self.playback_control_layout = QHBoxLayout()
+        self.playback_layout.addLayout(self.playback_control_layout)
+        
+        self.backward_playback = QPushButton("-5")
+        self.playback_control_layout.addWidget(self.backward_playback)
+
+        self.play_playback = QPushButton("Play")
+        self.playback_control_layout.addWidget(self.play_playback)
+        
+        self.forward_playback = QPushButton("+5")
+        self.playback_control_layout.addWidget(self.forward_playback)
+        
+        self.playback_navigation_layout = QHBoxLayout()
+        self.playback_layout.addLayout(self.playback_navigation_layout)
+        
+        self.delete_playback = QPushButton("Delete")
+        self.playback_navigation_layout.addWidget(self.delete_playback)
+        
+        self.back_playback = QPushButton("Back")
+        self.playback_navigation_layout.addWidget(self.back_playback)
+        
+        # Top & Bottom row
+        self.top_row = QVBoxLayout()
+        main_layout.addLayout(self.top_row)
+        
+        self.bottom_row = QVBoxLayout()
+        main_layout.addLayout(self.bottom_row)
+                
         # Record button
         self.record_button = QPushButton("Start Recording")
         self.bottom_row.addWidget(self.record_button)
         
     def setup_connections(self):
         self.record_button.clicked.connect(self.toggle_record)
+        self.play_playback.clicked.connect(self.toggle_playback)
+        self.delete_playback.clicked.connect(self.delete_audio)
+        self.back_playback.clicked.connect(self.back_audio)
   
     def setup_timer(self):
         self.timer = QTimer()
@@ -99,44 +141,82 @@ class MainWindow(QMainWindow):
         self.selected_idx = idx
         recording = self.recordings[idx]
         
+        self.hide_control(False)
+        self.hide_top_row(True)
         print(recording)
-    
-    # From the selected audio, load it from the storage and database
-    def load_audio(self):
+        self.timer_duration.setText("00:00.0")
+        self.audio_name.setText(recording[1])
+        self.total_duration.setText(recording[2])
         
+    def update_audio(self):    
         pass
     
-    def play_audio(self):
+    def toggle_playback(self):
+        if self.recorder.is_playing:
+            self.play_playback.setText("Play")
+            self.repaint()
+            self.recorder.pause()
+            return
+
+        if self.recorder.is_paused:
+            self.play_playback.setText("Pause")
+            self.repaint()
+            self.recorder.resume()
+            return
+
+        self.play_playback.setText("Pause")
+        recording = self.recordings[self.selected_idx]
+        self.recorder.play(recording[4])
+        self.timer.start(10)
         
-        pass
-        
-    def update_audio(self):
-        
+    def media_status(self, status):
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            self.play_playback.setText("Play")
+            self.recorder.is_playing = False
+            self.recorder.is_paused = False
+            self.timer.stop()
+            
+    def navigate_playback(self):
         pass
     
     def delete_audio(self):
-        
-        pass
+        recording = self.recordings[self.selected_idx]
+        self.storage.delete_audio(recording[0])
+        self.back_audio()
+    
+    def back_audio(self):
+        self.timer_duration.setText("")
+        self.hide_control(True)
+        self.hide_top_row(False)
+        self.recordings = self.storage.get_audio()
+        self.render_recording()
     
     # Audio Recording Logic
     def update_timer(self):
-        if not self.recorder.is_recording: return
-        
-        self.elapsed_ms += 1
-        total_seconds = self.elapsed_ms // 100
-        ms = (self.elapsed_ms % 100) // 10
-        minutes = total_seconds // 60
-        seconds = total_seconds % 60
-        self.timer_duration.setText(f"{minutes:02}:{seconds:02}.{ms:01}")
-
+        if self.recorder.is_recording:
+            self.elapsed_ms += 1
+            
+            total_seconds = self.elapsed_ms // 100
+            ms = (self.elapsed_ms % 100) // 10
+            minutes = total_seconds // 60
+            seconds = total_seconds % 60
+            
+            self.timer_duration.setText(f"{minutes:02}:{seconds:02}.{ms:01}")
+        elif self.recorder.is_playing:
+            ms = self.recorder.player.position()
+            self.timer_duration.setText(self.recorder.format_time(ms / 1000))
+            
     def toggle_record(self):
         if self.recorder.is_recording:
             self.hide_top_row(False)
             self.stop_record()
             self.record_button.setText("Start Recording")
+            self.recordings = self.storage.get_audio()
+            self.render_recording()
         else:
             self.hide_top_row(True)
             self.start_record()
+            self.timer_duration.show()
             self.record_button.setText("Stop Recording")
     
     def stop_record(self):
@@ -156,17 +236,20 @@ class MainWindow(QMainWindow):
         self.recorder.start()
     
     # Controls Visibility
-    def set_inputs(self, enabled):
-        
-        pass
+    def set_layout_visible(self, layout, visible):
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+
+            if item.widget():
+                item.widget().setVisible(visible)
+            elif item.layout():
+                self.set_layout_visible(item.layout(), visible)
     
+    def hide_control(self, enabled):
+        self.set_layout_visible(self.playback_layout, not enabled)
+        
     def hide_top_row(self, enabled):
-        for i in range(self.top_row.count()):
-            widget = self.top_row.itemAt(i).widget()
-            if enabled:
-                widget.hide()
-            else:
-                widget.show()
+        self.set_layout_visible(self.top_row, not enabled)
                 
     def closeEvent(self, event):
         self.recorder.storage.close()

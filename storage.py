@@ -1,4 +1,6 @@
 import sqlite3
+import os
+import shutil
 
 class Storage:
     def __init__(self, db_name="database.db"):
@@ -41,8 +43,30 @@ class Storage:
         self.conn.commit()
         
     
-    def delete_audio(self, audio_id):
-        self.cursor.execute("DELETE FROM audio WHERE id = ?", (audio_id,))
+    def delete_audio(self, audio_id=None):
+        if audio_id is None:
+            # Delete from database
+            self.cursor.execute("SELECT filepath FROM audio")
+            rows = self.cursor.fetchall()
+            self.cursor.execute("DELETE FROM audio")
+            
+            # Delete from folder
+            for (file_path,) in rows:
+                if os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+                elif os.path.isfile(file_path):
+                    os.remove(file_path)        
+        else:
+            self.cursor.execute("SELECT filepath FROM audio WHERE id = ?", (audio_id,))
+            row = self.cursor.fetchone()
+            
+            if row:
+                file_path = row[0]
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    
+            self.cursor.execute("DELETE FROM audio WHERE id = ?", (audio_id,))
+                
         self.conn.commit()
         
     def close(self):
