@@ -28,6 +28,9 @@ A Python desktop application for recording, playing back, and managing audio rec
 ### Multiple Recording
 ![Multiple Recording](/images/Multiple.png)
 
+### Dark Mode
+![Dark Mode](/images/Dark.png)
+
 ### Replay Recording
 ![Replay Recording](/images/Replay.png)
 

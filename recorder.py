@@ -19,6 +19,7 @@ class Recorder:
         self.audio_data = None
         self.sample_rate = 44100
         self.recorded = []
+        self.record = None
         self.filepath = "recordings"
         self.is_playing = False
         self.is_paused = False

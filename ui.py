@@ -255,6 +255,7 @@ class MainWindow(QMainWindow):
         self.recorder.progress(amount)
     
     def delete_audio(self):
+        self.recorder.stop()
         recording = self.recordings[self.selected_idx]
         self.storage.delete_audio(recording[0])
         self.back_audio()
