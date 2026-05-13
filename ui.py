@@ -270,6 +270,14 @@ class MainWindow(QMainWindow):
         self.render_recording()
     
     # Audio Recording Logic
+    def show_notifications(self, title, message=''):
+        self.tray.showMessage(
+            title,
+            message,
+            QSystemTrayIcon.MessageIcon.Information,
+            5000
+        )
+    
     def update_timer(self):
         if self.recorder.is_recording:
             self.elapsed_ms += 1
@@ -294,6 +302,7 @@ class MainWindow(QMainWindow):
         else:
             self.hide_top_row(True)
             self.start_record()
+            self.show_notifications("Started Recording...")
             self.timer_duration.show()
             self.record_button.setText("Stop Recording")
     
